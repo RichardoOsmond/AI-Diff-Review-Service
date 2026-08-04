@@ -1,6 +1,23 @@
-@AIDiffReviewService_HostAddress = http://localhost:5036
+@AIDiffReviewService_HostAddress = https://localhost:7259
 
-GET {{AIDiffReviewService_HostAddress}}/weatherforecast/
+GET {{AIDiffReviewService_HostAddress}}/health
 Accept: application/json
 
 ###
+
+GET {{AIDiffReviewService_HostAddress}}/spec
+Accept: application/json
+
+###
+
+POST {{AIDiffReviewService_HostAddress}}/v1/reviews
+Authorization: Bearer Token
+Content-Type: application/json
+
+{ "diff": "@@ -1,1 +1,2 @@\n+console.log('x');" }
+
+###
+
+GET {{AIDiffReviewService_HostAddress}}/v1/reviews/jobId
+Authorization: Bearer Token
+Accept: application/json
