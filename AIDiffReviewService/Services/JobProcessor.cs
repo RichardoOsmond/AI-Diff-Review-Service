@@ -7,11 +7,13 @@ namespace AIDiffReviewService.Services
     {
         private readonly JobQueue _queue;
         private readonly JobStore _store;
+        private readonly IReadOnlyDictionary<string, IReviewProvider> _providers;
 
-        public JobProcessor(JobQueue queue, JobStore store)
+        public JobProcessor(JobQueue queue, JobStore store, IEnumerable<IReviewProvider> providers)
         {
             _queue = queue;
             _store = store;
+            _providers = providers.ToDictionary(p => p.Name);
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,7 +40,14 @@ namespace AIDiffReviewService.Services
             try
             {
                 job.Status = JobStatus.Running;
-                job.Findings = new();
+
+                if (!_providers.TryGetValue(job.Provider, out var provider))
+                {
+                    throw new InvalidOperationException($"Unknown provider '{job.Provider}'.");
+                }
+
+                var raw = await provider.ReviewAsync(job.Diff, ct);
+                job.Findings = FindingSet.Normalize(raw, job.MaxFindings);
                 job.Chunks = 1;
                 job.CacheHit = false;
 

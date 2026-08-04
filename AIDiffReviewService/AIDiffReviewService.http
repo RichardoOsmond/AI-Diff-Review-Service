@@ -14,7 +14,7 @@ POST {{AIDiffReviewService_HostAddress}}/v1/reviews
 Authorization: Bearer Token
 Content-Type: application/json
 
-{ "diff": "@@ -1,1 +1,2 @@\n+console.log('x');" }
+{ "diff": "--- a/app.js\n+++ b/app.js\n@@ -1,0 +1,3 @@\n+eval(x);\n+console.log(y);\n+// TODO: fix\n" }
 
 ###
 

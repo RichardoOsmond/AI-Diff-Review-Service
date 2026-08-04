@@ -17,6 +17,8 @@ builder.Services.AddSingleton<JobStore>();
 
 builder.Services.AddSingleton<JobQueue>();
 
+builder.Services.AddSingleton<IReviewProvider, MockProvider>();
+
 builder.Services.AddSingleton(new UptimeProvider(startTime));
 
 builder.Services.AddHostedService<JobProcessor>();
