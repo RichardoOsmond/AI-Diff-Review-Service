@@ -13,6 +13,11 @@ namespace AIDiffReviewService.Domain
         public int InputBytes { get; init; }
         public int Chunks { get; set; }
         public bool CacheHit { get; set; }
+        public string? CacheKey { get; set; }
         public string? Error { get; set; }
+
+        // SSE event log — appended as the job processes, replayed by the stream endpoint.
+        public List<SseEvent> Events { get; } = new();
+        public bool EventsComplete { get; set; }
     }
 }

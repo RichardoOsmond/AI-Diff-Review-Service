@@ -1,23 +1,81 @@
-@AIDiffReviewService_HostAddress = https://localhost:7259
+@host = https://localhost:7259
+@token = PASTE_YOUR_REAL_TOKEN
 
-GET {{AIDiffReviewService_HostAddress}}/health
+GET {{host}}/health
 Accept: application/json
 
 ###
 
-GET {{AIDiffReviewService_HostAddress}}/spec
+GET {{host}}/spec
 Accept: application/json
 
 ###
 
-POST {{AIDiffReviewService_HostAddress}}/v1/reviews
-Authorization: Bearer Token
+POST {{host}}/v1/reviews
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "diff": "--- a/app.js\n+++ b/app.js\n@@ -1,0 +1,3 @@\n+eval(x);\n+console.log(y);\n+// TODO: fix\n" }
 
 ###
 
-GET {{AIDiffReviewService_HostAddress}}/v1/reviews/jobId
-Authorization: Bearer Token
+GET {{host}}/v1/reviews/jobId
+Authorization: Bearer {{token}}
 Accept: application/json
+
+### 1a. Idempotency: first call with key k1
+POST {{host}}/v1/reviews
+Authorization: Bearer {{token}}
+Idempotency-Key: k1
+Content-Type: application/json
+
+{ "diff": "--- a/a.js\n+++ b/a.js\n@@ -1,0 +1,1 @@\n+eval(x);\n" }
+
+### 1b. Same key + SAME body -> must return the SAME jobId as 1a
+POST {{host}}/v1/reviews
+Authorization: Bearer {{token}}
+Idempotency-Key: k1
+Content-Type: application/json
+
+{ "diff": "--- a/a.js\n+++ b/a.js\n@@ -1,0 +1,1 @@\n+eval(x);\n" }
+
+### 1c. Same key + DIFFERENT body -> must be 409 idempotency_conflict
+POST {{host}}/v1/reviews
+Authorization: Bearer {{token}}
+Idempotency-Key: k1
+Content-Type: application/json
+
+{ "diff": "--- a/a.js\n+++ b/a.js\n@@ -1,0 +1,1 @@\n+console.log(x);\n" }
+
+### 2a. Caching: submit a body with NO key
+POST {{host}}/v1/reviews
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "diff": "--- a/c.js\n+++ b/c.js\n@@ -1,0 +1,1 @@\n+eval(y);\n" }
+
+### 2b. Submit the IDENTICAL body again -> GET this job should show cacheHit:true
+POST {{host}}/v1/reviews
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "diff": "--- a/c.js\n+++ b/c.js\n@@ -1,0 +1,1 @@\n+eval(y);\n" }
+
+### 2c. GET the job from 2b (paste its jobId) -> expect usage.cacheHit = true
+GET {{host}}/v1/reviews/PASTE_JOBID_FROM_2b
+Authorization: Bearer {{token}}
+
+### 3. SSE replay: stream a finished job (paste any done jobId)
+GET {{host}}/v1/reviews/PASTE_DONE_JOBID/stream
+Authorization: Bearer {{token}}
+
+### 4a. llm graceful failure: submit with provider llm (no LLM configured)
+POST {{host}}/v1/reviews
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "diff": "--- a/d.js\n+++ b/d.js\n@@ -1,0 +1,1 @@\n+eval(z);\n", "options": { "provider": "llm" } }
+
+### 4b. GET the job from 4a -> expect status "failed" with a clear error
+GET {{host}}/v1/reviews/PASTE_JOBID_FROM_4a
+Authorization: Bearer {{token}}
