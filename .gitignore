@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Publish profiles (server name / deploy username — keep out of the public repo)
+**/PublishProfiles/
+
 # User-specific files
 *.rsuser
 *.suo
